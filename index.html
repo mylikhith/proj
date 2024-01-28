@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reels Page</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #121212; /* Dark background color */
+        color: #fff; /* Light text color */
+        overflow-x: hidden; /* Hide horizontal scrollbar */
+        overflow-y: scroll; /* Always show vertical scrollbar */
+        scrollbar-width: thin; /* Thin scrollbar for Firefox */
+        scrollbar-color: transparent transparent; /* Transparent scrollbar */
+      }
+
+      /* Webkit-based browsers */
+      body::-webkit-scrollbar {
+        width: 8px; /* Set width of scrollbar */
+      }
+
+      body::-webkit-scrollbar-thumb {
+        background-color: transparent; /* Make scrollbar thumb transparent */
+      }
+
+      @media (min-width: 768px) {
+        body {
+          overflow-y: hidden; /* Hide vertical scrollbar on desktop */
+        }
+      }
+
+      /* Disable scrolling on mobile devices */
+      @media (max-width: 767px) {
+        body {
+          overflow: hidden;
+        }
+      }
+
+      #content-wrapper::-webkit-scrollbar {
+        width: 8px; /* Set width of scrollbar */
+      }
+
+      #content-wrapper::-webkit-scrollbar-thumb {
+        background-color: transparent; /* Make scrollbar thumb transparent */
+      }
+
+      #container {
+        display: flex;
+        justify-content: center;
+        height: 100vh; /* Full height of viewport */
+      }
+
+      #content-wrapper {
+        scrollbar-width: thin; /* Thin scrollbar for Firefox */
+        scrollbar-color: transparent transparent;
+        max-width: 600px; /* Adjust as needed */
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow-y: auto; /* Add vertical scrollbar if needed */
+        padding: 0 10px;
+        scrollbar-width: none; /* Hide scrollbar for Firefox */
+      }
+
+      #header,
+      #share-bottom {
+        position: sticky; /* Fix the header and footer */
+        top: 0; /* Stick to the top */
+        z-index: 1; /* Ensure it's above other content */
+        background-color: #121212; /* Dark header/footer background */
+        padding: 10px;
+        width: calc(100% - 20px); /* Adjust for padding */
+      }
+
+      #share-bottom {
+        bottom: 0; /* Stick to the bottom */
+      }
+
+      #header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      #share-button,
+      #share-bottom-btn {
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        padding: 10px 20px;
+      }
+
+      #reels-container {
+        padding: 20px 0;
+        margin: 5px;
+      }
+
+      .reel {
+        margin-bottom: 20px;
+        border: 1px solid #333;
+        padding: 10px;
+        border-radius: 3%;
+        overflow: hidden;
+      }
+
+      .reel-title {
+        font-weight: bold;
+        margin-bottom: 20px;
+      }
+
+      video {
+        width: 100%;
+        height: 300px; /* Adjust height as needed */
+      }
+
+      .spacer {
+        flex-grow: 1; /* Fill remaining space */
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <div id="left-div"></div>
+      <div id="content-wrapper">
+        <div id="header">
+          <div>
+            <h2>User Name</h2>
+          </div>
+          <div>
+            <button id="share-button">Share</button>
+          </div>
+        </div>
+        <div id="content">
+          <div id="reels-container"></div>
+        </div>
+        <!-- <div id="share-bottom">
+          <button id="share-bottom-btn">Share</button>
+        </div> -->
+      </div>
+      <div id="right-div"></div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        shareContent(); // Fetch videos when the page is loaded
+      });
+
+      document
+        .getElementById("share-button")
+        .addEventListener("click", shareContent);
+      //   document
+      //     .getElementById("share-bottom-btn")
+      //     .addEventListener("click", shareContent);
+
+      async function shareContent() {
+        const titles = document.querySelectorAll(".reel-title");
+        const videos = document.querySelectorAll("video");
+
+        let shareText = "";
+
+        // Iterate through each title and its corresponding video
+        for (let i = 0; i < titles.length; i++) {
+          shareText += titles[i].textContent + "\n";
+          shareText += videos[i].src + "\n";
+        }
+
+        let shareData = {
+          text: shareText.trim(), // Set the share text
+          title: "video content", // Set the title of the share
+          files: Array.from(videos).map((video, index) => {
+            // Construct video object
+            return new File([video.src], `video${index + 1}.mp4`, {
+              type: "video/mp4",
+            });
+          }),
+        };
+
+        try {
+          await navigator.share(shareData);
+          console.log("Shared successfully");
+        } catch (error) {
+          console.error("Error sharing:", error);
+        }
+      }
+
+      async function fetchVideos() {
+        const response = await fetch("/videos"); // Request videos from server
+        if (!response.ok) {
+          throw new Error(`Failed to fetch videos: ${response.statusText}`);
+        }
+        const videos = await response.json();
+        return Object.values(videos); // Convert object values to an array
+      }
+
+      async function displayVideos() {
+        const reelsContainer = document.getElementById("reels-container");
+        const videos = await fetchVideos();
+        let html = "";
+        videos.forEach((video) => {
+          html += `
+              <div class="reel">
+                <h3 class="reel-title">${video.title}</h3>
+                <video controls>
+                  <source src="${video.src}" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            `;
+        });
+        reelsContainer.innerHTML = html;
+      }
+
+      displayVideos(); // Display videos when the page is loaded
+    </script>
+  </body>
+</html>

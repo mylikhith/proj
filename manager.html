@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reels Page (Manager)</title>
+    <style>
+      /* CSS styles from the client page */
+      /* Add any modifications here for the manager page */
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #121212; /* Dark background color */
+        color: #fff; /* Light text color */
+        overflow-x: hidden; /* Hide horizontal scrollbar */
+        overflow-y: scroll; /* Always show vertical scrollbar */
+        scrollbar-width: thin; /* Thin scrollbar for Firefox */
+        scrollbar-color: transparent transparent; /* Transparent scrollbar */
+      }
+
+      /* Webkit-based browsers */
+      body::-webkit-scrollbar {
+        width: 8px; /* Set width of scrollbar */
+      }
+
+      body::-webkit-scrollbar-thumb {
+        background-color: transparent; /* Make scrollbar thumb transparent */
+      }
+
+      @media (min-width: 768px) {
+        body {
+          overflow-y: hidden; /* Hide vertical scrollbar on desktop */
+        }
+      }
+
+      /* Disable scrolling on mobile devices */
+      @media (max-width: 767px) {
+        body {
+          overflow: hidden;
+        }
+      }
+
+      #content-wrapper::-webkit-scrollbar {
+        width: 8px; /* Set width of scrollbar */
+      }
+
+      #content-wrapper::-webkit-scrollbar-thumb {
+        background-color: transparent; /* Make scrollbar thumb transparent */
+      }
+
+      #container {
+        display: flex;
+        justify-content: center;
+        height: 100vh; /* Full height of viewport */
+      }
+
+      #content-wrapper {
+        scrollbar-width: thin; /* Thin scrollbar for Firefox */
+        scrollbar-color: transparent transparent;
+        max-width: 600px; /* Adjust as needed */
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow-y: auto; /* Add vertical scrollbar if needed */
+        padding: 0 10px;
+        scrollbar-width: none; /* Hide scrollbar for Firefox */
+      }
+
+      #header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky; /* Fix the header */
+        top: 0; /* Stick to the top */
+        z-index: 1; /* Ensure it's above other content */
+        background-color: #121212; /* Dark header background */
+        padding: 10px;
+        width: calc(100% - 20px); /* Adjust for padding */
+      }
+
+      #content {
+        margin-top: 20px;
+      }
+
+      #reels-container {
+        padding: 20px 0;
+        margin: 5px;
+      }
+
+      .reel-container {
+        position: relative;
+        margin-bottom: 20px;
+      }
+
+      .reel {
+        border: 1px solid #333;
+        padding: 10px;
+        border-radius: 3%;
+        overflow: hidden;
+        position: relative;
+      }
+
+      video {
+        width: 100%;
+        height: 300px; /* Adjust height as needed */
+      }
+
+      .buttons {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: rgba(
+          0,
+          0,
+          0,
+          0.5
+        ); /* Semi-transparent black background */
+        padding: 5px; /* Adjust padding as needed */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .buttons button {
+        color: #fff;
+        background-color: #dc3545; /* Red color for remove button */
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        padding: 5px 10px;
+      }
+
+      .buttons select {
+        padding: 5px;
+        background-color: #333; /* Dark background color */
+        color: #fff; /* Light text color */
+        border: 1px solid #fff; /* White border */
+        border-radius: 5px;
+      }
+
+      /* Additional styles for manager page */
+      #generate-button {
+        background-color: #28a745; /* Green color for generate button */
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        padding: 10px 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <div id="left-div"></div>
+      <div id="content-wrapper">
+        <div id="header">
+          <div>
+            <h2>Manager Page</h2>
+          </div>
+          <div>
+            <button id="generate-button" onclick="generateContent()">
+              Generate
+            </button>
+          </div>
+        </div>
+        <div id="content">
+          <div id="reels-container"></div>
+        </div>
+      </div>
+      <div id="right-div"></div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        displayVideos(); // Fetch and display videos when the page is loaded
+      });
+
+      async function displayVideos() {
+        const reelsContainer = document.getElementById("reels-container");
+        const videos = await fetchVideos();
+
+        let html = "";
+
+        videos.forEach((video) => {
+          html += `
+<div class="reel-container">
+<div class="reel">
+<video controls>
+<source src="${video.src}" type="video/mp4" />
+Your browser does not support the video tag.
+</video>
+<div class="buttons">
+<button onclick="removeVideo(this)">Remove</button>
+<select>
+<option value="">Select Client</option>
+<option value="client1">Client 1</option>
+<option value="client2">Client 2</option>
+</select>
+</div>
+</div>
+</div>
+`;
+        });
+
+        reelsContainer.innerHTML = html;
+      }
+
+      async function fetchVideos() {
+        const response = await fetch("/videos"); // Request videos from server
+        if (!response.ok) {
+          throw new Error(`Failed to fetch videos: ${response.statusText}`);
+        }
+        const videos = await response.json();
+        return Object.values(videos); // Convert object values to an array
+      }
+
+      async function generateContent() {
+        const selectElements = document.querySelectorAll("select");
+        const videos = document.querySelectorAll("video");
+
+        // Iterate through each select element and its corresponding video
+        selectElements.forEach((selectElement, index) => {
+          const clientId = selectElement.value;
+          const videoSrc = videos[index].querySelector("source").src;
+
+          if (!clientId) {
+            alert("Please select a client for all videos.");
+            return;
+          }
+
+          // You can perform further actions here, such as sending the video source and client ID to the server
+          console.log(
+            `Generated content for Client ID: ${clientId}, Video Source: ${videoSrc}`
+          );
+        });
+
+        alert("Content generated successfully!");
+      }
+
+      function removeVideo(button) {
+        const reelContainer = button.closest(".reel-container");
+        reelContainer.remove();
+      }
+    </script>
+  </body>
+</html>
